@@ -3,12 +3,33 @@ import smtplib
 from email.message import EmailMessage
 
 
+def save():
+    with open("save.txt", "w") as file: # открывается файл для записи, если его нет, то создаётся
+        file.write(sender_email_entry.get() + '\n')
+        file.write(recipient_email_entry.get() + '\n')
+        file.write(password_entry.get() + '\n')
+
+
+def load():
+    try:
+        with open("save.txt", "r") as file: # открывается файл для чтения (и потом автоматически закрывается)
+            credentials = file.readlines()
+            sender_email_entry.insert(0, credentials[0].strip()) # поле заполняется из строки с индексом 0 файла,
+                                                                        # .strip удаляет всё лишнее из строки
+            recipient_email_entry.insert(0, credentials[1].strip()) # поле заполняется из строки с индексом 1 файла
+            password_entry.insert(0, credentials[2].strip()) # поле заполняется из строки с индексом 2 файла
+    except FileNotFoundError:
+        # Файл не найден, игнорируем ошибку:
+        pass
+
+
 def send_email():
     # sender_email = 'barbanakov.sergey@yandex.ru'
     # recipient_email = 'nikomu@mail.ru'
     # password = 'afmdurglqtrivmqy'
     # subject = 'Проверка связи 1'
     # body = 'Привет 1 из python'
+    save()
     sender_email = sender_email_entry.get()
     recipient_email = recipient_email_entry.get()
     password = password_entry.get()
@@ -21,8 +42,7 @@ def send_email():
     msg['From'] = sender_email
     msg['To'] = recipient_email
 
-    # server = None
-
+    server = None
     try:
         # использование порта 465 для SSL
         server = smtplib.SMTP_SSL('smtp.yandex.ru', 465)
@@ -67,6 +87,9 @@ Button(text="Отправить", command=send_email).grid(row=5, column=1, stic
 
 result_label = Label(text="")
 result_label.grid(row=6, column=1, sticky=W)
+
+# Загрузка сохраненных данных
+load()
 
 # Запуск главного цикла окна
 window.mainloop()
