@@ -1,6 +1,14 @@
 from tkinter import *
 import smtplib
 from email.message import EmailMessage
+from email.utils import parseaddr
+
+
+def validate_email(email):
+    # Проверка email на соответствие стандартному формату.
+    name, addr = parseaddr(email) # парсинг email и в переменные name и addr записывается из эл. письма имя и адрес
+    return '@' in addr and '.' in addr.split('@')[-1] # возвращается True если есть "@" в адресе, а также есть "."
+                                                # в последней части адреса, разрезанного по символу "@" (индекс [-1])
 
 
 def save():
@@ -14,24 +22,25 @@ def load():
     try:
         with open("save.txt", "r") as file: # открывается файл для чтения (и потом автоматически закрывается)
             credentials = file.readlines()
-            sender_email_entry.insert(0, credentials[0].strip()) # поле заполняется из строки с индексом 0 файла,
-                                                                        # .strip удаляет всё лишнее из строки
-            recipient_email_entry.insert(0, credentials[1].strip()) # поле заполняется из строки с индексом 1 файла
-            password_entry.insert(0, credentials[2].strip()) # поле заполняется из строки с индексом 2 файла
+            sender_email_entry.insert(0, credentials[0].strip()) # поле заполняется из файла, строка с индексом 0
+                                                                        # (.strip удаляет всё лишнее из строки)
+            recipient_email_entry.insert(0, credentials[1].strip()) # поле заполняется из строки с индексом 1
+            password_entry.insert(0, credentials[2].strip()) # поле заполняется из строки с индексом 2
     except FileNotFoundError:
         # Файл не найден, игнорируем ошибку:
         pass
 
 
 def send_email():
-    # sender_email = 'barbanakov.sergey@yandex.ru'
-    # recipient_email = 'nikomu@mail.ru'
-    # password = 'afmdurglqtrivmqy'
-    # subject = 'Проверка связи 1'
-    # body = 'Привет 1 из python'
     save()
     sender_email = sender_email_entry.get()
     recipient_email = recipient_email_entry.get()
+
+    # Проверка email-адресов, если в любом адресе ошибка, то выход из функции и ничего не отправляется
+    if not validate_email(sender_email) or not validate_email(recipient_email):
+        result_label.config(text='Ошибка: Неверный формат email')
+        return
+
     password = password_entry.get()
     subject = subject_entry.get()
     body = body_text.get("1.0", END)
@@ -43,15 +52,14 @@ def send_email():
     msg['To'] = recipient_email
 
     server = None
+
     try:
         # использование порта 465 для SSL
         server = smtplib.SMTP_SSL('smtp.yandex.ru', 465)
         server.login(sender_email, password)
         server.send_message(msg)
-        # print('Письмо отправлено!')
         result_label.config(text='Письмо отправлено!')
     except Exception as e:
-        # print(f'Ошибка {e}')
         result_label.config(text=f'Ошибка: {e}')
     finally:
         if server:
@@ -91,5 +99,5 @@ result_label.grid(row=6, column=1, sticky=W)
 # Загрузка сохраненных данных
 load()
 
-# Запуск главного цикла окна
+# Запуск главного цикла
 window.mainloop()
